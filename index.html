@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>노트 링크 추천</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0e0e0e;
+    --surface: #161616;
+    --border: #2a2a2a;
+    --accent: #c8f07a;
+    --accent-dim: #8aab3f;
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --text-dimmer: #444;
+    --danger: #ff6b6b;
+    --radius: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── 헤더 ── */
+  header {
+    padding: 24px 32px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  header h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: -0.3px;
+    color: var(--accent);
+  }
+  header span {
+    color: var(--text-dim);
+    font-size: 11px;
+  }
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .badge.ok { border-color: var(--accent-dim); color: var(--accent); }
+
+  /* ── 레이아웃 ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr 300px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* ── 사이드바 (노트 목록) ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sidebar-header span { color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  .note-count { color: var(--accent); font-size: 11px; }
+  .note-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 8px;
+  }
+  .note-list::-webkit-scrollbar { width: 4px; }
+  .note-list::-webkit-scrollbar-track { background: transparent; }
+  .note-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .note-item {
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .note-item:hover { background: var(--surface); }
+  .note-item.active { background: #1e2e0a; border: 1px solid var(--accent-dim); }
+  .note-item .note-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+  .note-item .note-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text-dimmer);
+    flex-shrink: 0;
+  }
+  .note-item.embedded .note-dot { background: var(--accent); }
+
+  .upload-area {
+    margin: 8px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-dim);
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .upload-area:hover, .upload-area.drag { border-color: var(--accent); color: var(--accent); background: #1e2e0a22; }
+  #fileInput { display: none; }
+
+  /* ── 메인 (노트 뷰 + 추천) ── */
+  .main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+  }
+  .main-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .main-header .note-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 17px;
+    font-weight: 400;
+    flex: 1;
+  }
+  .btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0e0e0e;
+    font-weight: 500;
+  }
+  .btn.primary:hover { background: var(--accent-dim); border-color: var(--accent-dim); }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .note-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+    line-height: 1.75;
+    color: var(--text-dim);
+    font-size: 13px;
+    white-space: pre-wrap;
+  }
+  .note-content::-webkit-scrollbar { width: 4px; }
+  .note-content::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dimmer);
+    gap: 8px;
+    text-align: center;
+    padding: 40px;
+    line-height: 1.8;
+  }
+  .empty-state .big { font-family: 'Instrument Serif', serif; font-size: 32px; color: var(--text-dim); }
+
+  /* ── 추천 패널 ── */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+  }
+  .panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+  }
+  .panel-content::-webkit-scrollbar { width: 4px; }
+  .panel-content::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .rec-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    transition: border-color 0.15s;
+  }
+  .rec-item:hover { border-color: var(--accent-dim); }
+  .rec-name {
+    color: var(--accent);
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  .rec-score {
+    color: var(--text-dimmer);
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+  .score-bar {
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .score-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 1px;
+    transition: width 0.4s ease;
+  }
+  .copy-link {
+    font-size: 11px;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: inline-block;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .copy-link:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-link.copied { color: var(--accent); border-color: var(--accent); }
+
+  .copy-all-wrap {
+    padding: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── 설정 모달 ── */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: #0009;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px;
+    width: 440px;
+    max-width: 90vw;
+  }
+  .modal h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 20px;
+    font-weight: 400;
+    margin-bottom: 6px;
+  }
+  .modal p { color: var(--text-dim); font-size: 12px; margin-bottom: 20px; line-height: 1.6; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 11px; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.8px; }
+  .field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+  /* ── 토스트 ── */
+  #toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 18px;
+    border-radius: 99px;
+    font-size: 12px;
+    transition: transform 0.3s ease;
+    pointer-events: none;
+    z-index: 200;
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── 로딩 ── */
+  .spinner {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .progress-wrap { padding: 12px 16px; border-top: 1px solid var(--border); }
+  .progress-label { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
+  .progress-bar { height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+</style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header>
+  <h1>노트 링크 추천</h1>
+  <span>obsidian [[wikilink]] recommender</span>
+  <div class="header-right">
+    <span class="badge" id="vaultBadge">설정 필요</span>
+    <button class="btn" onclick="openSettings()">설정</button>
+  </div>
+</header>
+
+<!-- 본문 -->
+<div class="layout">
+
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span>노트</span>
+      <span class="note-count" id="noteCount">0개</span>
+    </div>
+    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+      <div>📂</div>
+      <div>.md 파일 드래그하거나 클릭해서 업로드</div>
+      <div style="color:var(--text-dimmer);margin-top:4px">여러 파일 한번에 OK</div>
+    </div>
+    <input type="file" id="fileInput" accept=".md" multiple>
+    <div class="note-list" id="noteList"></div>
+  </div>
+
+  <!-- 메인 -->
+  <div class="main">
+    <div id="mainHeader" class="main-header" style="display:none">
+      <span class="note-title" id="currentNoteTitle"></span>
+      <button class="btn" id="deleteBtn" onclick="deleteCurrentNote()" style="color:var(--danger);border-color:var(--danger)">삭제</button>
+      <button class="btn primary" id="analyzeBtn" onclick="analyzeNote()">🔗 링크 추천</button>
+    </div>
+    <div id="emptyState" class="empty-state">
+      <div class="big">∅</div>
+      <div>.md 파일을 업로드하면<br>AI가 관련 노트를 찾아줘</div>
+    </div>
+    <div id="noteContent" class="note-content" style="display:none"></div>
+    <div id="progressWrap" class="progress-wrap" style="display:none">
+      <div class="progress-label" id="progressLabel">분석 중...</div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- 추천 패널 -->
+  <div class="panel">
+    <div class="panel-header">관련 노트 추천</div>
+    <div class="panel-content" id="recList">
+      <div style="color:var(--text-dimmer);padding:20px 0;text-align:center;line-height:2">
+        노트를 선택하고<br>링크 추천 버튼을 눌러줘
+      </div>
+    </div>
+    <div class="copy-all-wrap" id="copyAllWrap" style="display:none">
+      <button class="btn" style="width:100%" onclick="copyAll()">전체 복사</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- 설정 모달 -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal">
+    <h2>설정</h2>
+    <p>API 키는 브라우저 로컬스토리지에만 저장돼. 외부로 전송되지 않아.</p>
+    <div class="field">
+      <label>Voyage AI API Key</label>
+      <input type="password" id="voyageKey" placeholder="pa-xxxxxxxxxxxxxxxx">
+    </div>
+    <div class="field">
+      <label>GitHub Token</label>
+      <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxx">
+    </div>
+    <div class="field">
+      <label>GitHub 사용자명</label>
+      <input type="text" id="githubUser" placeholder="your-username">
+    </div>
+    <div class="field">
+      <label>GitHub 저장소 이름</label>
+      <input type="text" id="githubRepo" placeholder="obsidian-vault">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeSettings()">취소</button>
+      <button class="btn primary" onclick="saveSettings()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 토스트 -->
+<div id="toast"></div>
+
+<script>
+// ── 상태 ──────────────────────────────────────────────────────
+const STATE = {
+  notes: {},        // { stem: { name, content, embedding, githubSha } }
+  currentStem: null,
+  settings: {},
+  analyzing: false,
+};
+
+// ── 초기화 ────────────────────────────────────────────────────
+async function init() {
+  loadSettings();
+  await loadFromGitHub();
+  renderNoteList();
+  updateBadge();
+}
+
+// ── 설정 ──────────────────────────────────────────────────────
+function loadSettings() {
+  const s = localStorage.getItem('nlr_settings');
+  if (s) STATE.settings = JSON.parse(s);
+  if (STATE.settings.voyageKey) document.getElementById('voyageKey').value = STATE.settings.voyageKey;
+  if (STATE.settings.githubToken) document.getElementById('githubToken').value = STATE.settings.githubToken;
+  if (STATE.settings.githubUser) document.getElementById('githubUser').value = STATE.settings.githubUser;
+  if (STATE.settings.githubRepo) document.getElementById('githubRepo').value = STATE.settings.githubRepo;
+}
+
+function saveSettings() {
+  STATE.settings = {
+    voyageKey: document.getElementById('voyageKey').value.trim(),
+    githubToken: document.getElementById('githubToken').value.trim(),
+    githubUser: document.getElementById('githubUser').value.trim(),
+    githubRepo: document.getElementById('githubRepo').value.trim(),
+  };
+  localStorage.setItem('nlr_settings', JSON.stringify(STATE.settings));
+  closeSettings();
+  updateBadge();
+  toast('설정 저장됨');
+  loadFromGitHub();
+}
+
+function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
+function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+
+function updateBadge() {
+  const badge = document.getElementById('vaultBadge');
+  const s = STATE.settings;
+  if (s.voyageKey && s.githubToken && s.githubUser && s.githubRepo) {
+    badge.textContent = `${s.githubUser}/${s.githubRepo}`;
+    badge.className = 'badge ok';
+  } else {
+    badge.textContent = '설정 필요';
+    badge.className = 'badge';
+  }
+}
+
+// ── GitHub API ────────────────────────────────────────────────
+function ghHeaders() {
+  return {
+    'Authorization': `token ${STATE.settings.githubToken}`,
+    'Accept': 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json',
+  };
+}
+function ghBase() {
+  const { githubUser: u, githubRepo: r } = STATE.settings;
+  return `https://api.github.com/repos/${u}/${r}/contents`;
+}
+
+async function loadFromGitHub() {
+  const s = STATE.settings;
+  if (!s.githubToken || !s.githubUser || !s.githubRepo) return;
+  try {
+    // notes/ 폴더
+    const res = await fetch(`${ghBase()}/notes`, { headers: ghHeaders() });
+    if (!res.ok) return;
+    const files = await res.json();
+    const mdFiles = files.filter(f => f.name.endsWith('.md'));
+
+    // embeddings.json
+    let embCache = {};
+    const embRes = await fetch(`${ghBase()}/embeddings.json`, { headers: ghHeaders() });
+    if (embRes.ok) {
+      const embFile = await embRes.json();
+      embCache = JSON.parse(atob(embFile.content.replace(/\n/g, '')));
+      STATE._embeddingsSha = embFile.sha;
+    }
+
+    for (const file of mdFiles) {
+      const stem = file.name.replace(/\.md$/, '');
+      const contentRes = await fetch(file.download_url);
+      const content = await contentRes.text();
+      STATE.notes[stem] = {
+        name: file.name,
+        content,
+        embedding: embCache[stem] || null,
+        githubSha: file.sha,
+      };
+    }
+    renderNoteList();
+    toast(`GitHub에서 ${mdFiles.length}개 노트 불러옴`);
+  } catch(e) {
+    console.error('GitHub 로드 오류:', e);
+  }
+}
+
+async function saveNoteToGitHub(stem) {
+  const note = STATE.notes[stem];
+  const path = `notes/${note.name}`;
+  const body = {
+    message: `노트 저장: ${note.name}`,
+    content: btoa(unescape(encodeURIComponent(note.content))),
+  };
+  if (note.githubSha) body.sha = note.githubSha;
+  const res = await fetch(`${ghBase()}/${path}`, {
+    method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    STATE.notes[stem].githubSha = data.content.sha;
+  }
+}
+
+async function deleteNoteFromGitHub(stem) {
+  const note = STATE.notes[stem];
+  if (!note.githubSha) return;
+  await fetch(`${ghBase()}/notes/${note.name}`, {
+    method: 'DELETE',
+    headers: ghHeaders(),
+    body: JSON.stringify({ message: `노트 삭제: ${note.name}`, sha: note.githubSha }),
+  });
+}
+
+async function saveEmbeddingsToGitHub() {
+  const embData = {};
+  for (const [stem, note] of Object.entries(STATE.notes)) {
+    if (note.embedding) embData[stem] = note.embedding;
+  }
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(embData))));
+  const body = { message: '임베딩 캐시 업데이트', content };
+  if (STATE._embeddingsSha) body.sha = STATE._embeddingsSha;
+  const res = await fetch(`${ghBase()}/embeddings.json`, {
+    method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    STATE._embeddingsSha = data.content.sha;
+  }
+}
+
+// ── 파일 업로드 ───────────────────────────────────────────────
+document.getElementById('fileInput').addEventListener('change', handleFiles);
+
+const uploadArea = document.getElementById('uploadArea');
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadArea.classList.remove('drag');
+  handleFiles({ target: { files: e.dataTransfer.files } });
+});
+
+async function handleFiles(e) {
+  const files = [...e.target.files];
+  if (!files.length) return;
+
+  let added = 0;
+  for (const file of files) {
+    if (!file.name.endsWith('.md')) continue;
+    const content = await file.text();
+    const stem = file.name.replace(/\.md$/, '');
+    const isNew = !STATE.notes[stem];
+    STATE.notes[stem] = { name: file.name, content, embedding: isNew ? null : STATE.notes[stem]?.embedding, githubSha: STATE.notes[stem]?.githubSha };
+    added++;
+
+    if (STATE.settings.githubToken) {
+      await saveNoteToGitHub(stem);
+    }
+  }
+
+  renderNoteList();
+  toast(`${added}개 노트 추가됨`);
+  document.getElementById('fileInput').value = '';
+}
+
+// ── 노트 목록 렌더 ────────────────────────────────────────────
+function renderNoteList() {
+  const list = document.getElementById('noteList');
+  const stems = Object.keys(STATE.notes).sort();
+  document.getElementById('noteCount').textContent = `${stems.length}개`;
+  list.innerHTML = stems.map(stem => {
+    const note = STATE.notes[stem];
+    const active = stem === STATE.currentStem ? ' active' : '';
+    const embedded = note.embedding ? ' embedded' : '';
+    return `<div class="note-item${active}${embedded}" onclick="selectNote('${stem}')">
+      <div class="note-dot"></div>
+      <div class="note-name" title="${note.name}">${stem}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── 노트 선택 ─────────────────────────────────────────────────
+function selectNote(stem) {
+  STATE.currentStem = stem;
+  const note = STATE.notes[stem];
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('mainHeader').style.display = 'flex';
+  document.getElementById('noteContent').style.display = 'block';
+  document.getElementById('currentNoteTitle').textContent = stem;
+  document.getElementById('noteContent').textContent = note.content;
+  document.getElementById('recList').innerHTML = `<div style="color:var(--text-dimmer);padding:20px 0;text-align:center">링크 추천 버튼을 눌러줘</div>`;
+  document.getElementById('copyAllWrap').style.display = 'none';
+
+  renderNoteList();
+}
+
+// ── 노트 삭제 ─────────────────────────────────────────────────
+async function deleteCurrentNote() {
+  if (!STATE.currentStem) return;
+  const stem = STATE.currentStem;
+  if (!confirm(`"${stem}" 노트를 삭제할까?`)) return;
+
+  if (STATE.settings.githubToken) await deleteNoteFromGitHub(stem);
+  delete STATE.notes[stem];
+  STATE.currentStem = null;
+
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('mainHeader').style.display = 'none';
+  document.getElementById('noteContent').style.display = 'none';
+  document.getElementById('recList').innerHTML = '';
+  document.getElementById('copyAllWrap').style.display = 'none';
+
+  renderNoteList();
+  toast('노트 삭제됨');
+}
+
+// ── Voyage AI 임베딩 ──────────────────────────────────────────
+async function getEmbedding(text) {
+  const clean = text
+    .replace(/^---.*?---\s*/s, '')
+    .replace(/```.*?```/gs, ' ')
+    .replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, '$1')
+    .replace(/[#*>`_~]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 4000);
+
+  const res = await fetch('https://api.voyageai.com/v1/embeddings', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${STATE.settings.voyageKey}`,
+    },
+    body: JSON.stringify({ input: [clean], model: 'voyage-3-lite', input_type: 'document' }),
+  });
+  if (!res.ok) throw new Error('Voyage API 오류: ' + res.status);
+  const data = await res.json();
+  return data.data[0].embedding;
+}
+
+function cosineSim(a, b) {
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) { dot += a[i]*b[i]; na += a[i]*a[i]; nb += b[i]*b[i]; }
+  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
+
+// ── 링크 추천 ─────────────────────────────────────────────────
+async function analyzeNote() {
+  if (!STATE.currentStem || STATE.analyzing) return;
+  if (!STATE.settings.voyageKey) { toast('Voyage API 키를 설정해줘'); openSettings(); return; }
+
+  STATE.analyzing = true;
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>분석 중';
+
+  const stems = Object.keys(STATE.notes);
+  const toEmbed = stems.filter(s => !STATE.notes[s].embedding);
+
+  showProgress(0, toEmbed.length + 1);
+
+  try {
+    // 임베딩 없는 노트들 먼저 처리
+    for (let i = 0; i < toEmbed.length; i++) {
+      const stem = toEmbed[i];
+      updateProgress(i, toEmbed.length + 1, `임베딩: ${stem}`);
+      STATE.notes[stem].embedding = await getEmbedding(STATE.notes[stem].content);
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    // 현재 노트 임베딩 (내용 바뀌었을 수 있으니 항상 재계산)
+    updateProgress(toEmbed.length, toEmbed.length + 1, '현재 노트 분석 중');
+    STATE.notes[STATE.currentStem].embedding = await getEmbedding(STATE.notes[STATE.currentStem].content);
+
+    // GitHub에 임베딩 저장
+    if (STATE.settings.githubToken) {
+      updateProgress(toEmbed.length + 1, toEmbed.length + 1, 'GitHub에 저장 중');
+      await saveEmbeddingsToGitHub();
+    }
+
+    // 유사도 계산
+    const curEmb = STATE.notes[STATE.currentStem].embedding;
+    const sims = stems
+      .filter(s => s !== STATE.currentStem && STATE.notes[s].embedding)
+      .map(s => ({ stem: s, score: cosineSim(curEmb, STATE.notes[s].embedding) }))
+      .filter(x => x.score >= 0.4)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 7);
+
+    renderRecs(sims);
+    renderNoteList();
+  } catch(e) {
+    toast('오류: ' + e.message);
+    console.error(e);
+  } finally {
+    STATE.analyzing = false;
+    btn.disabled = false;
+    btn.innerHTML = '🔗 링크 추천';
+    hideProgress();
+  }
+}
+
+function showProgress(cur, total) {
+  document.getElementById('progressWrap').style.display = 'block';
+  updateProgress(cur, total, '');
+}
+function hideProgress() { document.getElementById('progressWrap').style.display = 'none'; }
+function updateProgress(cur, total, label) {
+  document.getElementById('progressLabel').textContent = label;
+  document.getElementById('progressFill').style.width = `${total ? (cur/total*100) : 0}%`;
+}
+
+// ── 추천 렌더 ─────────────────────────────────────────────────
+function renderRecs(sims) {
+  const list = document.getElementById('recList');
+  if (!sims.length) {
+    list.innerHTML = `<div style="color:var(--text-dimmer);padding:20px 0;text-align:center;line-height:2">관련 노트를 찾지 못했어<br><span style="font-size:11px">노트가 더 많아지면 나아질 거야</span></div>`;
+    document.getElementById('copyAllWrap').style.display = 'none';
+    return;
+  }
+
+  list.innerHTML = sims.map(({ stem, score }) => `
+    <div class="rec-item">
+      <div class="rec-name">[[${stem}]]</div>
+      <div class="rec-score">유사도 ${(score * 100).toFixed(0)}%</div>
+      <div class="score-bar"><div class="score-fill" style="width:${score*100}%"></div></div>
+      <span class="copy-link" onclick="copyLink(this, '${stem}')">복사</span>
+    </div>
+  `).join('');
+
+  document.getElementById('copyAllWrap').style.display = 'block';
+}
+
+function copyLink(el, stem) {
+  navigator.clipboard.writeText(`[[${stem}]]`);
+  el.textContent = '복사됨 ✓';
+  el.classList.add('copied');
+  setTimeout(() => { el.textContent = '복사'; el.classList.remove('copied'); }, 1500);
+}
+
+function copyAll() {
+  const items = document.querySelectorAll('.rec-name');
+  const text = [...items].map(el => el.textContent).join('\n');
+  navigator.clipboard.writeText(text);
+  toast('전체 복사됨');
+}
+
+// ── 토스트 ────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── 시작 ──────────────────────────────────────────────────────
+init();
+
+// 설정이 없으면 모달 자동 열기
+const s = STATE.settings;
+if (!s.voyageKey || !s.githubToken) {
+  setTimeout(openSettings, 400);
+}
+</script>
+</body>
+</html>
