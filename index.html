@@ -32,7 +32,6 @@
     flex-direction: column;
   }
 
-  /* ── 헤더 ── */
   header {
     padding: 24px 32px 20px;
     border-bottom: 1px solid var(--border);
@@ -44,19 +43,10 @@
     font-family: 'Instrument Serif', serif;
     font-size: 22px;
     font-weight: 400;
-    letter-spacing: -0.3px;
     color: var(--accent);
   }
-  header span {
-    color: var(--text-dim);
-    font-size: 11px;
-  }
-  .header-right {
-    margin-left: auto;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
+  header span { color: var(--text-dim); font-size: 11px; }
+  .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
   .badge {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -67,15 +57,15 @@
   }
   .badge.ok { border-color: var(--accent-dim); color: var(--accent); }
 
-  /* ── 레이아웃 ── */
   .layout {
     display: grid;
-    grid-template-columns: 260px 1fr 300px;
+    grid-template-columns: 280px 1fr 300px;
     flex: 1;
     min-height: 0;
+    height: calc(100vh - 69px);
   }
 
-  /* ── 사이드바 (노트 목록) ── */
+  /* ── 사이드바 ── */
   .sidebar {
     border-right: 1px solid var(--border);
     display: flex;
@@ -83,7 +73,7 @@
     overflow: hidden;
   }
   .sidebar-header {
-    padding: 14px 16px 10px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -91,57 +81,71 @@
   }
   .sidebar-header span { color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
   .note-count { color: var(--accent); font-size: 11px; }
-  .note-list {
-    overflow-y: auto;
-    flex: 1;
-    padding: 8px;
-  }
-  .note-list::-webkit-scrollbar { width: 4px; }
-  .note-list::-webkit-scrollbar-track { background: transparent; }
-  .note-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  .note-item {
-    padding: 8px 10px;
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: background 0.15s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .note-item:hover { background: var(--surface); }
-  .note-item.active { background: #1e2e0a; border: 1px solid var(--accent-dim); }
-  .note-item .note-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 12px;
-  }
-  .note-item .note-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--text-dimmer);
-    flex-shrink: 0;
-  }
-  .note-item.embedded .note-dot { background: var(--accent); }
 
   .upload-area {
     margin: 8px;
     border: 1px dashed var(--border);
     border-radius: var(--radius);
-    padding: 14px;
+    padding: 12px;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s;
     color: var(--text-dim);
     font-size: 11px;
-    line-height: 1.6;
+    line-height: 1.8;
   }
   .upload-area:hover, .upload-area.drag { border-color: var(--accent); color: var(--accent); background: #1e2e0a22; }
   #fileInput { display: none; }
 
-  /* ── 메인 (노트 뷰 + 추천) ── */
+  .note-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 4px 6px;
+  }
+  .note-list::-webkit-scrollbar { width: 4px; }
+  .note-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* 폴더 트리 */
+  .tree-folder {
+    margin-bottom: 2px;
+  }
+  .tree-folder-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .tree-folder-label:hover { background: var(--surface); color: var(--text); }
+  .tree-folder-label .arrow { font-size: 9px; transition: transform 0.2s; }
+  .tree-folder-label.open .arrow { transform: rotate(90deg); }
+  .tree-children { padding-left: 14px; border-left: 1px solid var(--border); margin-left: 10px; }
+  .tree-children.hidden { display: none; }
+
+  .note-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 8px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 12px;
+  }
+  .note-item:hover { background: var(--surface); }
+  .note-item.active { background: #1e2e0a; border: 1px solid var(--accent-dim); }
+  .note-item .note-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .note-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text-dimmer); flex-shrink: 0; }
+  .note-item.embedded .note-dot { background: var(--accent); }
+
+  /* ── 메인 ── */
   .main {
     display: flex;
     flex-direction: column;
@@ -160,7 +164,16 @@
     font-size: 17px;
     font-weight: 400;
     flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
+  .note-path-label {
+    font-size: 10px;
+    color: var(--text-dimmer);
+    padding: 8px 20px 0;
+  }
+
   .btn {
     background: transparent;
     border: 1px solid var(--border);
@@ -171,21 +184,17 @@
     font-family: 'DM Mono', monospace;
     font-size: 12px;
     transition: all 0.15s;
+    white-space: nowrap;
   }
   .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #0e0e0e;
-    font-weight: 500;
-  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #0e0e0e; font-weight: 500; }
   .btn.primary:hover { background: var(--accent-dim); border-color: var(--accent-dim); }
   .btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
   .note-content {
     flex: 1;
     overflow-y: auto;
-    padding: 24px 28px;
+    padding: 20px 28px;
     line-height: 1.75;
     color: var(--text-dim);
     font-size: 13px;
@@ -209,24 +218,16 @@
   .empty-state .big { font-family: 'Instrument Serif', serif; font-size: 32px; color: var(--text-dim); }
 
   /* ── 추천 패널 ── */
-  .panel {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+  .panel { display: flex; flex-direction: column; overflow: hidden; }
   .panel-header {
-    padding: 14px 16px 10px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border);
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-dim);
   }
-  .panel-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px;
-  }
+  .panel-content { flex: 1; overflow-y: auto; padding: 12px; }
   .panel-content::-webkit-scrollbar { width: 4px; }
   .panel-content::-webkit-scrollbar-thumb { background: var(--border); }
 
@@ -239,55 +240,26 @@
     transition: border-color 0.15s;
   }
   .rec-item:hover { border-color: var(--accent-dim); }
-  .rec-name {
-    color: var(--accent);
-    font-size: 13px;
-    margin-bottom: 4px;
-  }
-  .rec-score {
-    color: var(--text-dimmer);
-    font-size: 11px;
-    margin-bottom: 10px;
-  }
-  .score-bar {
-    height: 2px;
-    background: var(--border);
-    border-radius: 1px;
-    margin-bottom: 10px;
-    overflow: hidden;
-  }
-  .score-fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 1px;
-    transition: width 0.4s ease;
-  }
+  .rec-name { color: var(--accent); font-size: 13px; margin-bottom: 2px; }
+  .rec-folder { color: var(--text-dimmer); font-size: 10px; margin-bottom: 6px; }
+  .rec-score { color: var(--text-dimmer); font-size: 11px; margin-bottom: 8px; }
+  .score-bar { height: 2px; background: var(--border); border-radius: 1px; margin-bottom: 10px; overflow: hidden; }
+  .score-fill { height: 100%; background: var(--accent); border-radius: 1px; transition: width 0.4s ease; }
   .copy-link {
-    font-size: 11px;
-    color: var(--text-dim);
-    cursor: pointer;
-    padding: 4px 8px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    display: inline-block;
-    transition: all 0.15s;
-    user-select: none;
+    font-size: 11px; color: var(--text-dim); cursor: pointer;
+    padding: 3px 8px; border: 1px solid var(--border); border-radius: 4px;
+    display: inline-block; transition: all 0.15s; user-select: none;
   }
   .copy-link:hover { border-color: var(--accent); color: var(--accent); }
   .copy-link.copied { color: var(--accent); border-color: var(--accent); }
 
-  .copy-all-wrap {
-    padding: 12px;
-    border-top: 1px solid var(--border);
-  }
+  .copy-all-wrap { padding: 12px; border-top: 1px solid var(--border); }
 
-  /* ── 설정 모달 ── */
+  /* ── 모달 ── */
   .modal-bg {
     position: fixed; inset: 0;
     background: #0009;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     z-index: 100;
     backdrop-filter: blur(4px);
   }
@@ -299,61 +271,37 @@
     width: 440px;
     max-width: 90vw;
   }
-  .modal h2 {
-    font-family: 'Instrument Serif', serif;
-    font-size: 20px;
-    font-weight: 400;
-    margin-bottom: 6px;
-  }
+  .modal h2 { font-family: 'Instrument Serif', serif; font-size: 20px; font-weight: 400; margin-bottom: 6px; }
   .modal p { color: var(--text-dim); font-size: 12px; margin-bottom: 20px; line-height: 1.6; }
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 11px; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.8px; }
   .field input {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 9px 12px;
-    border-radius: var(--radius);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    outline: none;
-    transition: border-color 0.15s;
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); padding: 9px 12px; border-radius: var(--radius);
+    font-family: 'DM Mono', monospace; font-size: 12px; outline: none; transition: border-color 0.15s;
   }
   .field input:focus { border-color: var(--accent); }
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
 
   /* ── 토스트 ── */
   #toast {
-    position: fixed;
-    bottom: 24px; left: 50%;
+    position: fixed; bottom: 24px; left: 50%;
     transform: translateX(-50%) translateY(80px);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 18px;
-    border-radius: 99px;
-    font-size: 12px;
-    transition: transform 0.3s ease;
-    pointer-events: none;
-    z-index: 200;
-    white-space: nowrap;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); padding: 10px 18px; border-radius: 99px;
+    font-size: 12px; transition: transform 0.3s ease;
+    pointer-events: none; z-index: 200; white-space: nowrap;
   }
   #toast.show { transform: translateX(-50%) translateY(0); }
 
-  /* ── 로딩 ── */
   .spinner {
-    display: inline-block;
-    width: 10px; height: 10px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-    margin-right: 6px;
+    display: inline-block; width: 10px; height: 10px;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .progress-wrap { padding: 12px 16px; border-top: 1px solid var(--border); }
+  .progress-wrap { padding: 10px 16px; border-top: 1px solid var(--border); }
   .progress-label { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
   .progress-bar { height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; }
   .progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
@@ -361,7 +309,6 @@
 </head>
 <body>
 
-<!-- 헤더 -->
 <header>
   <h1>노트 링크 추천</h1>
   <span>obsidian [[wikilink]] recommender</span>
@@ -371,7 +318,6 @@
   </div>
 </header>
 
-<!-- 본문 -->
 <div class="layout">
 
   <!-- 사이드바 -->
@@ -382,10 +328,10 @@
     </div>
     <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
       <div>📂</div>
-      <div>.md 파일 드래그하거나 클릭해서 업로드</div>
-      <div style="color:var(--text-dimmer);margin-top:4px">여러 파일 한번에 OK</div>
+      <div>.md 파일 드래그하거나 클릭</div>
+      <div style="color:var(--text-dimmer);font-size:10px">폴더 선택도 가능</div>
     </div>
-    <input type="file" id="fileInput" accept=".md" multiple>
+    <input type="file" id="fileInput" accept=".md" multiple webkitdirectory>
     <div class="note-list" id="noteList"></div>
   </div>
 
@@ -400,6 +346,7 @@
       <div class="big">∅</div>
       <div>.md 파일을 업로드하면<br>AI가 관련 노트를 찾아줘</div>
     </div>
+    <div id="notePathLabel" class="note-path-label" style="display:none"></div>
     <div id="noteContent" class="note-content" style="display:none"></div>
     <div id="progressWrap" class="progress-wrap" style="display:none">
       <div class="progress-label" id="progressLabel">분석 중...</div>
@@ -423,7 +370,7 @@
 </div>
 
 <!-- 설정 모달 -->
-<div class="modal-bg" id="settingsModal">
+<div class="modal-bg" id="settingsModal" style="display:none">
   <div class="modal">
     <h2>설정</h2>
     <p>API 키는 브라우저 로컬스토리지에만 저장돼. 외부로 전송되지 않아.</p>
@@ -450,22 +397,28 @@
   </div>
 </div>
 
-<!-- 토스트 -->
 <div id="toast"></div>
 
 <script>
 // ── 상태 ──────────────────────────────────────────────────────
 const STATE = {
-  notes: {},        // { stem: { name, content, embedding, githubSha } }
+  // notes: { stem: { name, path, folder, content, embedding, githubSha } }
+  notes: {},
   currentStem: null,
   settings: {},
   analyzing: false,
+  _embeddingsSha: null,
+  _folderOpen: {}, // 폴더 열림/닫힘 상태
 };
 
 // ── 초기화 ────────────────────────────────────────────────────
 async function init() {
   loadSettings();
-  await loadFromGitHub();
+  if (STATE.settings.githubToken) {
+    await loadFromGitHub();
+  } else {
+    setTimeout(openSettings, 400);
+  }
   renderNoteList();
   updateBadge();
 }
@@ -522,17 +475,27 @@ function ghBase() {
   return `https://api.github.com/repos/${u}/${r}/contents`;
 }
 
+async function ghGetAllFiles(path = 'notes') {
+  const res = await fetch(`${ghBase()}/${path}`, { headers: ghHeaders() });
+  if (!res.ok) return [];
+  const items = await res.json();
+  let files = [];
+  for (const item of items) {
+    if (item.type === 'file' && item.name.endsWith('.md')) {
+      files.push(item);
+    } else if (item.type === 'dir') {
+      const sub = await ghGetAllFiles(item.path);
+      files = files.concat(sub);
+    }
+  }
+  return files;
+}
+
 async function loadFromGitHub() {
   const s = STATE.settings;
   if (!s.githubToken || !s.githubUser || !s.githubRepo) return;
   try {
-    // notes/ 폴더
-    const res = await fetch(`${ghBase()}/notes`, { headers: ghHeaders() });
-    if (!res.ok) return;
-    const files = await res.json();
-    const mdFiles = files.filter(f => f.name.endsWith('.md'));
-
-    // embeddings.json
+    // embeddings 캐시 로드
     let embCache = {};
     const embRes = await fetch(`${ghBase()}/embeddings.json`, { headers: ghHeaders() });
     if (embRes.ok) {
@@ -541,19 +504,31 @@ async function loadFromGitHub() {
       STATE._embeddingsSha = embFile.sha;
     }
 
-    for (const file of mdFiles) {
-      const stem = file.name.replace(/\.md$/, '');
+    // 모든 .md 파일 재귀 수집
+    const files = await ghGetAllFiles('notes');
+
+    for (const file of files) {
+      // notes/ 이후 경로를 폴더로 사용
+      const relativePath = file.path.replace(/^notes\//, '');
+      const parts = relativePath.split('/');
+      const fileName = parts[parts.length - 1];
+      const folder = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
+      const stem = relativePath.replace(/\.md$/, '');
+
       const contentRes = await fetch(file.download_url);
       const content = await contentRes.text();
+
       STATE.notes[stem] = {
-        name: file.name,
+        name: fileName,
+        path: relativePath,
+        folder,
         content,
         embedding: embCache[stem] || null,
         githubSha: file.sha,
       };
     }
     renderNoteList();
-    toast(`GitHub에서 ${mdFiles.length}개 노트 불러옴`);
+    if (files.length > 0) toast(`GitHub에서 ${files.length}개 노트 불러옴`);
   } catch(e) {
     console.error('GitHub 로드 오류:', e);
   }
@@ -561,7 +536,7 @@ async function loadFromGitHub() {
 
 async function saveNoteToGitHub(stem) {
   const note = STATE.notes[stem];
-  const path = `notes/${note.name}`;
+  const path = `notes/${note.path}`;
   const body = {
     message: `노트 저장: ${note.name}`,
     content: btoa(unescape(encodeURIComponent(note.content))),
@@ -579,7 +554,7 @@ async function saveNoteToGitHub(stem) {
 async function deleteNoteFromGitHub(stem) {
   const note = STATE.notes[stem];
   if (!note.githubSha) return;
-  await fetch(`${ghBase()}/notes/${note.name}`, {
+  await fetch(`${ghBase()}/notes/${note.path}`, {
     method: 'DELETE',
     headers: ghHeaders(),
     body: JSON.stringify({ message: `노트 삭제: ${note.name}`, sha: note.githubSha }),
@@ -616,16 +591,29 @@ uploadArea.addEventListener('drop', e => {
 });
 
 async function handleFiles(e) {
-  const files = [...e.target.files];
+  const files = [...e.target.files].filter(f => f.name.endsWith('.md'));
   if (!files.length) return;
 
   let added = 0;
   for (const file of files) {
-    if (!file.name.endsWith('.md')) continue;
+    // webkitRelativePath: "폴더명/서브폴더/파일.md" 형태
+    const relativePath = file.webkitRelativePath || file.name;
+    // 최상위 폴더(vault 폴더명) 제거
+    const parts = relativePath.split('/');
+    const stripped = parts.length > 1 ? parts.slice(1).join('/') : parts[0];
+    const strippedParts = stripped.split('/');
+    const folder = strippedParts.length > 1 ? strippedParts.slice(0, -1).join('/') : '';
+    const stem = stripped.replace(/\.md$/, '');
+
     const content = await file.text();
-    const stem = file.name.replace(/\.md$/, '');
-    const isNew = !STATE.notes[stem];
-    STATE.notes[stem] = { name: file.name, content, embedding: isNew ? null : STATE.notes[stem]?.embedding, githubSha: STATE.notes[stem]?.githubSha };
+    STATE.notes[stem] = {
+      name: file.name,
+      path: stripped,
+      folder,
+      content,
+      embedding: STATE.notes[stem]?.embedding || null,
+      githubSha: STATE.notes[stem]?.githubSha || null,
+    };
     added++;
 
     if (STATE.settings.githubToken) {
@@ -638,20 +626,69 @@ async function handleFiles(e) {
   document.getElementById('fileInput').value = '';
 }
 
-// ── 노트 목록 렌더 ────────────────────────────────────────────
+// ── 폴더 트리 렌더 ────────────────────────────────────────────
+function buildTree(notes) {
+  const tree = {}; // { folderPath: [stems] }
+  for (const stem of Object.keys(notes)) {
+    const folder = notes[stem].folder || '';
+    if (!tree[folder]) tree[folder] = [];
+    tree[folder].push(stem);
+  }
+  return tree;
+}
+
 function renderNoteList() {
   const list = document.getElementById('noteList');
-  const stems = Object.keys(STATE.notes).sort();
+  const stems = Object.keys(STATE.notes);
   document.getElementById('noteCount').textContent = `${stems.length}개`;
-  list.innerHTML = stems.map(stem => {
-    const note = STATE.notes[stem];
-    const active = stem === STATE.currentStem ? ' active' : '';
-    const embedded = note.embedding ? ' embedded' : '';
-    return `<div class="note-item${active}${embedded}" onclick="selectNote('${stem}')">
-      <div class="note-dot"></div>
-      <div class="note-name" title="${note.name}">${stem}</div>
-    </div>`;
-  }).join('');
+
+  if (!stems.length) { list.innerHTML = ''; return; }
+
+  const tree = buildTree(STATE.notes);
+
+  // 루트 노트 먼저, 그 다음 폴더 순
+  let html = '';
+
+  // 루트 노트 (폴더 없음)
+  const rootNotes = (tree[''] || []).sort();
+  for (const stem of rootNotes) {
+    html += renderNoteItem(stem);
+  }
+
+  // 폴더들
+  const folders = Object.keys(tree).filter(f => f !== '').sort();
+  for (const folder of folders) {
+    const isOpen = STATE._folderOpen[folder] !== false; // 기본 열림
+    html += `
+      <div class="tree-folder">
+        <div class="tree-folder-label ${isOpen ? 'open' : ''}" onclick="toggleFolder('${folder}')">
+          <span class="arrow">▶</span>
+          <span>📁 ${folder}</span>
+          <span style="color:var(--text-dimmer);margin-left:auto">${tree[folder].length}</span>
+        </div>
+        <div class="tree-children ${isOpen ? '' : 'hidden'}" id="folder-${folder.replace(/\//g, '-')}">
+          ${tree[folder].sort().map(stem => renderNoteItem(stem)).join('')}
+        </div>
+      </div>`;
+  }
+
+  list.innerHTML = html;
+}
+
+function renderNoteItem(stem) {
+  const note = STATE.notes[stem];
+  const active = stem === STATE.currentStem ? ' active' : '';
+  const embedded = note.embedding ? ' embedded' : '';
+  const displayName = note.name.replace(/\.md$/, '');
+  return `<div class="note-item${active}${embedded}" onclick="selectNote('${CSS.escape(stem)}')">
+    <div class="note-dot"></div>
+    <div class="note-name" title="${note.path}">${displayName}</div>
+  </div>`;
+}
+
+function toggleFolder(folder) {
+  STATE._folderOpen[folder] = STATE._folderOpen[folder] === false ? true : false;
+  renderNoteList();
 }
 
 // ── 노트 선택 ─────────────────────────────────────────────────
@@ -662,7 +699,16 @@ function selectNote(stem) {
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('mainHeader').style.display = 'flex';
   document.getElementById('noteContent').style.display = 'block';
-  document.getElementById('currentNoteTitle').textContent = stem;
+  document.getElementById('currentNoteTitle').textContent = note.name.replace(/\.md$/, '');
+
+  const pathLabel = document.getElementById('notePathLabel');
+  if (note.folder) {
+    pathLabel.style.display = 'block';
+    pathLabel.textContent = note.folder;
+  } else {
+    pathLabel.style.display = 'none';
+  }
+
   document.getElementById('noteContent').textContent = note.content;
   document.getElementById('recList').innerHTML = `<div style="color:var(--text-dimmer);padding:20px 0;text-align:center">링크 추천 버튼을 눌러줘</div>`;
   document.getElementById('copyAllWrap').style.display = 'none';
@@ -674,7 +720,7 @@ function selectNote(stem) {
 async function deleteCurrentNote() {
   if (!STATE.currentStem) return;
   const stem = STATE.currentStem;
-  if (!confirm(`"${stem}" 노트를 삭제할까?`)) return;
+  if (!confirm(`"${STATE.notes[stem].name}" 노트를 삭제할까?`)) return;
 
   if (STATE.settings.githubToken) await deleteNoteFromGitHub(stem);
   delete STATE.notes[stem];
@@ -683,6 +729,7 @@ async function deleteCurrentNote() {
   document.getElementById('emptyState').style.display = 'flex';
   document.getElementById('mainHeader').style.display = 'none';
   document.getElementById('noteContent').style.display = 'none';
+  document.getElementById('notePathLabel').style.display = 'none';
   document.getElementById('recList').innerHTML = '';
   document.getElementById('copyAllWrap').style.display = 'none';
 
@@ -691,27 +738,46 @@ async function deleteCurrentNote() {
 }
 
 // ── Voyage AI 임베딩 ──────────────────────────────────────────
-async function getEmbedding(text) {
-  const clean = text
+function cleanText(text) {
+  return text
     .replace(/^---.*?---\s*/s, '')
     .replace(/```.*?```/gs, ' ')
     .replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, '$1')
+    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
     .replace(/[#*>`_~]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 4000);
+}
 
-  const res = await fetch('https://api.voyageai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${STATE.settings.voyageKey}`,
-    },
-    body: JSON.stringify({ input: [clean], model: 'voyage-3-lite', input_type: 'document' }),
-  });
-  if (!res.ok) throw new Error('Voyage API 오류: ' + res.status);
-  const data = await res.json();
-  return data.data[0].embedding;
+async function getEmbeddingWithRetry(text, retries = 3) {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const res = await fetch('https://api.voyageai.com/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${STATE.settings.voyageKey}`,
+        },
+        body: JSON.stringify({ input: [cleanText(text)], model: 'voyage-3-lite', input_type: 'document' }),
+      });
+
+      if (res.status === 429) {
+        // 레이트 리밋 → 대기 후 재시도
+        const wait = (attempt + 1) * 3000;
+        updateProgress(-1, -1, `API 요청 제한 — ${wait/1000}초 대기 중...`);
+        await new Promise(r => setTimeout(r, wait));
+        continue;
+      }
+
+      if (!res.ok) throw new Error(`Voyage API 오류: ${res.status}`);
+      const data = await res.json();
+      return data.data[0].embedding;
+    } catch(e) {
+      if (attempt === retries - 1) throw e;
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
 }
 
 function cosineSim(a, b) {
@@ -736,25 +802,22 @@ async function analyzeNote() {
   showProgress(0, toEmbed.length + 1);
 
   try {
-    // 임베딩 없는 노트들 먼저 처리
     for (let i = 0; i < toEmbed.length; i++) {
       const stem = toEmbed[i];
-      updateProgress(i, toEmbed.length + 1, `임베딩: ${stem}`);
-      STATE.notes[stem].embedding = await getEmbedding(STATE.notes[stem].content);
-      await new Promise(r => setTimeout(r, 200));
+      updateProgress(i, toEmbed.length + 1, `임베딩: ${STATE.notes[stem].name}`);
+      STATE.notes[stem].embedding = await getEmbeddingWithRetry(STATE.notes[stem].content);
+      // 요청 간 딜레이 (429 방지)
+      await new Promise(r => setTimeout(r, 600));
     }
 
-    // 현재 노트 임베딩 (내용 바뀌었을 수 있으니 항상 재계산)
     updateProgress(toEmbed.length, toEmbed.length + 1, '현재 노트 분석 중');
-    STATE.notes[STATE.currentStem].embedding = await getEmbedding(STATE.notes[STATE.currentStem].content);
+    STATE.notes[STATE.currentStem].embedding = await getEmbeddingWithRetry(STATE.notes[STATE.currentStem].content);
 
-    // GitHub에 임베딩 저장
     if (STATE.settings.githubToken) {
       updateProgress(toEmbed.length + 1, toEmbed.length + 1, 'GitHub에 저장 중');
       await saveEmbeddingsToGitHub();
     }
 
-    // 유사도 계산
     const curEmb = STATE.notes[STATE.currentStem].embedding;
     const sims = stems
       .filter(s => s !== STATE.currentStem && STATE.notes[s].embedding)
@@ -783,7 +846,9 @@ function showProgress(cur, total) {
 function hideProgress() { document.getElementById('progressWrap').style.display = 'none'; }
 function updateProgress(cur, total, label) {
   document.getElementById('progressLabel').textContent = label;
-  document.getElementById('progressFill').style.width = `${total ? (cur/total*100) : 0}%`;
+  if (cur >= 0 && total > 0) {
+    document.getElementById('progressFill').style.width = `${cur/total*100}%`;
+  }
 }
 
 // ── 추천 렌더 ─────────────────────────────────────────────────
@@ -795,20 +860,27 @@ function renderRecs(sims) {
     return;
   }
 
-  list.innerHTML = sims.map(({ stem, score }) => `
-    <div class="rec-item">
-      <div class="rec-name">[[${stem}]]</div>
-      <div class="rec-score">유사도 ${(score * 100).toFixed(0)}%</div>
-      <div class="score-bar"><div class="score-fill" style="width:${score*100}%"></div></div>
-      <span class="copy-link" onclick="copyLink(this, '${stem}')">복사</span>
-    </div>
-  `).join('');
+  list.innerHTML = sims.map(({ stem, score }) => {
+    const note = STATE.notes[stem];
+    const displayName = note.name.replace(/\.md$/, '');
+    const escapedStem = stem.replace(/'/g, "\\'");
+    return `
+      <div class="rec-item">
+        <div class="rec-name">[[${displayName}]]</div>
+        ${note.folder ? `<div class="rec-folder">📁 ${note.folder}</div>` : ''}
+        <div class="rec-score">유사도 ${(score * 100).toFixed(0)}%</div>
+        <div class="score-bar"><div class="score-fill" style="width:${score*100}%"></div></div>
+        <span class="copy-link" onclick="copyLink(this, '${escapedStem}')">복사</span>
+      </div>`;
+  }).join('');
 
   document.getElementById('copyAllWrap').style.display = 'block';
 }
 
 function copyLink(el, stem) {
-  navigator.clipboard.writeText(`[[${stem}]]`);
+  const note = STATE.notes[stem];
+  const displayName = note ? note.name.replace(/\.md$/, '') : stem;
+  navigator.clipboard.writeText(`[[${displayName}]]`);
   el.textContent = '복사됨 ✓';
   el.classList.add('copied');
   setTimeout(() => { el.textContent = '복사'; el.classList.remove('copied'); }, 1500);
@@ -828,17 +900,10 @@ function toast(msg) {
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-// ── 시작 ──────────────────────────────────────────────────────
 init();
-
-// 설정이 없으면 모달 자동 열기
-const s = STATE.settings;
-if (!s.voyageKey || !s.githubToken) {
-  setTimeout(openSettings, 400);
-}
 </script>
 </body>
 </html>
