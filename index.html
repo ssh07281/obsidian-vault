@@ -644,30 +644,31 @@ function renderNoteList() {
 
   if (!stems.length) { list.innerHTML = ''; return; }
 
+  // stem → index 맵 저장 (onclick에서 인덱스로 접근)
+  STATE._stemIndex = stems;
+
   const tree = buildTree(STATE.notes);
 
-  // 루트 노트 먼저, 그 다음 폴더 순
   let html = '';
 
-  // 루트 노트 (폴더 없음)
   const rootNotes = (tree[''] || []).sort();
   for (const stem of rootNotes) {
-    html += renderNoteItem(stem);
+    html += renderNoteItem(stem, stems.indexOf(stem));
   }
 
-  // 폴더들
   const folders = Object.keys(tree).filter(f => f !== '').sort();
   for (const folder of folders) {
-    const isOpen = STATE._folderOpen[folder] !== false; // 기본 열림
+    const isOpen = STATE._folderOpen[folder] !== false;
+    const folderId = 'folder-' + folder.replace(/[^a-zA-Z0-9]/g, '-');
     html += `
       <div class="tree-folder">
-        <div class="tree-folder-label ${isOpen ? 'open' : ''}" onclick="toggleFolder('${folder}')">
+        <div class="tree-folder-label ${isOpen ? 'open' : ''}" onclick="toggleFolder(${JSON.stringify(folder)})">
           <span class="arrow">▶</span>
           <span>📁 ${folder}</span>
           <span style="color:var(--text-dimmer);margin-left:auto">${tree[folder].length}</span>
         </div>
-        <div class="tree-children ${isOpen ? '' : 'hidden'}" id="folder-${folder.replace(/\//g, '-')}">
-          ${tree[folder].sort().map(stem => renderNoteItem(stem)).join('')}
+        <div class="tree-children ${isOpen ? '' : 'hidden'}" id="${folderId}">
+          ${tree[folder].sort().map(stem => renderNoteItem(stem, stems.indexOf(stem))).join('')}
         </div>
       </div>`;
   }
@@ -675,12 +676,12 @@ function renderNoteList() {
   list.innerHTML = html;
 }
 
-function renderNoteItem(stem) {
+function renderNoteItem(stem, idx) {
   const note = STATE.notes[stem];
   const active = stem === STATE.currentStem ? ' active' : '';
   const embedded = note.embedding ? ' embedded' : '';
   const displayName = note.name.replace(/\.md$/, '');
-  return `<div class="note-item${active}${embedded}" onclick="selectNote('${CSS.escape(stem)}')">
+  return `<div class="note-item${active}${embedded}" onclick="selectNoteByIndex(${idx})">
     <div class="note-dot"></div>
     <div class="note-name" title="${note.path}">${displayName}</div>
   </div>`;
@@ -692,6 +693,12 @@ function toggleFolder(folder) {
 }
 
 // ── 노트 선택 ─────────────────────────────────────────────────
+function selectNoteByIndex(idx) {
+  const stem = STATE._stemIndex && STATE._stemIndex[idx];
+  if (!stem) return;
+  selectNote(stem);
+}
+
 function selectNote(stem) {
   STATE.currentStem = stem;
   const note = STATE.notes[stem];
