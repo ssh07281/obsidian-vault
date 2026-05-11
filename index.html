@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>노트 링크 추천</title>
+<title>옵시디언 링크</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap');
 
@@ -33,11 +33,11 @@
   }
 
   header {
-    padding: 24px 32px 20px;
+    padding: 20px 32px;
     border-bottom: 1px solid var(--border);
     display: flex;
-    align-items: baseline;
-    gap: 16px;
+    align-items: center;
+    gap: 14px;
   }
   header h1 {
     font-family: 'Instrument Serif', serif;
@@ -45,7 +45,13 @@
     font-weight: 400;
     color: var(--accent);
   }
-  header span { color: var(--text-dim); font-size: 11px; }
+  .version-badge {
+    font-size: 10px;
+    color: var(--text-dimmer);
+    border: 1px solid var(--border);
+    padding: 2px 7px;
+    border-radius: 99px;
+  }
   .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
   .badge {
     background: var(--surface);
@@ -61,8 +67,7 @@
     display: grid;
     grid-template-columns: 280px 1fr 300px;
     flex: 1;
-    min-height: 0;
-    height: calc(100vh - 69px);
+    height: calc(100vh - 65px);
   }
 
   /* ── 사이드바 ── */
@@ -93,8 +98,39 @@
     color: var(--text-dim);
     font-size: 11px;
     line-height: 1.8;
+    position: relative;
+    overflow: hidden;
   }
   .upload-area:hover, .upload-area.drag { border-color: var(--accent); color: var(--accent); background: #1e2e0a22; }
+  .upload-area.loading { pointer-events: none; border-color: var(--accent-dim); }
+
+  /* 업로드 로딩 오버레이 */
+  .upload-loading-overlay {
+    position: absolute; inset: 0;
+    background: #0e0e0ecc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--accent);
+    backdrop-filter: blur(2px);
+  }
+  .upload-loading-overlay .upload-progress-bar {
+    width: 80%;
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .upload-loading-overlay .upload-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 1px;
+    transition: width 0.2s;
+  }
+
   #fileInput { display: none; }
 
   .note-list {
@@ -105,10 +141,7 @@
   .note-list::-webkit-scrollbar { width: 4px; }
   .note-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  /* 폴더 트리 */
-  .tree-folder {
-    margin-bottom: 2px;
-  }
+  .tree-folder { margin-bottom: 2px; }
   .tree-folder-label {
     display: flex;
     align-items: center;
@@ -168,11 +201,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .note-path-label {
-    font-size: 10px;
-    color: var(--text-dimmer);
-    padding: 8px 20px 0;
-  }
+  .note-path-label { font-size: 10px; color: var(--text-dimmer); padding: 8px 20px 0; }
 
   .btn {
     background: transparent;
@@ -310,8 +339,8 @@
 <body>
 
 <header>
-  <h1>노트 링크 추천</h1>
-  <span>obsidian [[wikilink]] recommender</span>
+  <h1>옵시디언 링크</h1>
+  <span class="version-badge">V1.01</span>
   <div class="header-right">
     <span class="badge" id="vaultBadge">설정 필요</span>
     <button class="btn" onclick="openSettings()">설정</button>
@@ -328,8 +357,16 @@
     </div>
     <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
       <div>📂</div>
-      <div>.md 파일 드래그하거나 클릭</div>
-      <div style="color:var(--text-dimmer);font-size:10px">폴더 선택도 가능</div>
+      <div>.md 파일 또는 폴더를 드래그해 주세요</div>
+      <div style="color:var(--text-dimmer);font-size:10px">클릭하면 폴더 선택창이 열립니다</div>
+      <!-- 업로드 로딩 오버레이 -->
+      <div class="upload-loading-overlay" id="uploadOverlay" style="display:none">
+        <span class="spinner" style="width:14px;height:14px;margin:0"></span>
+        <span id="uploadOverlayLabel">업로드 중...</span>
+        <div class="upload-progress-bar">
+          <div class="upload-progress-fill" id="uploadProgressFill" style="width:0%"></div>
+        </div>
+      </div>
     </div>
     <input type="file" id="fileInput" accept=".md" multiple webkitdirectory>
     <div class="note-list" id="noteList"></div>
@@ -344,7 +381,7 @@
     </div>
     <div id="emptyState" class="empty-state">
       <div class="big">∅</div>
-      <div>.md 파일을 업로드하면<br>AI가 관련 노트를 찾아줘</div>
+      <div>.md 파일을 업로드하시면<br>AI가 관련 노트를 찾아드립니다</div>
     </div>
     <div id="notePathLabel" class="note-path-label" style="display:none"></div>
     <div id="noteContent" class="note-content" style="display:none"></div>
@@ -359,7 +396,7 @@
     <div class="panel-header">관련 노트 추천</div>
     <div class="panel-content" id="recList">
       <div style="color:var(--text-dimmer);padding:20px 0;text-align:center;line-height:2">
-        노트를 선택하고<br>링크 추천 버튼을 눌러줘
+        노트를 선택하고<br>링크 추천 버튼을 눌러 주세요
       </div>
     </div>
     <div class="copy-all-wrap" id="copyAllWrap" style="display:none">
@@ -373,7 +410,7 @@
 <div class="modal-bg" id="settingsModal" style="display:none">
   <div class="modal">
     <h2>설정</h2>
-    <p>API 키는 브라우저 로컬스토리지에만 저장돼. 외부로 전송되지 않아.</p>
+    <p>API 키는 브라우저 로컬스토리지에만 저장됩니다. 외부로 전송되지 않습니다.</p>
     <div class="field">
       <label>Voyage AI API Key</label>
       <input type="password" id="voyageKey" placeholder="pa-xxxxxxxxxxxxxxxx">
@@ -400,15 +437,16 @@
 <div id="toast"></div>
 
 <script>
-// ── 상태 ──────────────────────────────────────────────────────
+const VERSION = 'V1.01';
+
 const STATE = {
-  // notes: { stem: { name, path, folder, content, embedding, githubSha } }
   notes: {},
   currentStem: null,
   settings: {},
   analyzing: false,
   _embeddingsSha: null,
-  _folderOpen: {}, // 폴더 열림/닫힘 상태
+  _folderOpen: {},
+  _stemIndex: [],
 };
 
 // ── 초기화 ────────────────────────────────────────────────────
@@ -443,7 +481,7 @@ function saveSettings() {
   localStorage.setItem('nlr_settings', JSON.stringify(STATE.settings));
   closeSettings();
   updateBadge();
-  toast('설정 저장됨');
+  toast('설정이 저장되었습니다');
   loadFromGitHub();
 }
 
@@ -495,7 +533,6 @@ async function loadFromGitHub() {
   const s = STATE.settings;
   if (!s.githubToken || !s.githubUser || !s.githubRepo) return;
   try {
-    // embeddings 캐시 로드
     let embCache = {};
     const embRes = await fetch(`${ghBase()}/embeddings.json`, { headers: ghHeaders() });
     if (embRes.ok) {
@@ -504,11 +541,8 @@ async function loadFromGitHub() {
       STATE._embeddingsSha = embFile.sha;
     }
 
-    // 모든 .md 파일 재귀 수집
     const files = await ghGetAllFiles('notes');
-
     for (const file of files) {
-      // notes/ 이후 경로를 폴더로 사용
       const relativePath = file.path.replace(/^notes\//, '');
       const parts = relativePath.split('/');
       const fileName = parts[parts.length - 1];
@@ -528,7 +562,7 @@ async function loadFromGitHub() {
       };
     }
     renderNoteList();
-    if (files.length > 0) toast(`GitHub에서 ${files.length}개 노트 불러옴`);
+    if (files.length > 0) toast(`GitHub에서 노트 ${files.length}개를 불러왔습니다`);
   } catch(e) {
     console.error('GitHub 로드 오류:', e);
   }
@@ -578,6 +612,19 @@ async function saveEmbeddingsToGitHub() {
   }
 }
 
+// ── 업로드 로딩 표시 ──────────────────────────────────────────
+function showUploadLoading(label, pct) {
+  const overlay = document.getElementById('uploadOverlay');
+  overlay.style.display = 'flex';
+  document.getElementById('uploadOverlayLabel').textContent = label;
+  document.getElementById('uploadProgressFill').style.width = pct + '%';
+  document.getElementById('uploadArea').classList.add('loading');
+}
+function hideUploadLoading() {
+  document.getElementById('uploadOverlay').style.display = 'none';
+  document.getElementById('uploadArea').classList.remove('loading');
+}
+
 // ── 파일 업로드 ───────────────────────────────────────────────
 document.getElementById('fileInput').addEventListener('change', handleFiles);
 
@@ -594,21 +641,26 @@ async function handleFiles(e) {
   const files = [...e.target.files].filter(f => f.name.endsWith('.md'));
   if (!files.length) return;
 
+  showUploadLoading(`0 / ${files.length}개 업로드 중...`, 0);
+
   let added = 0;
-  for (const file of files) {
-    // webkitRelativePath: "폴더명/서브폴더/파일.md" 형태
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const pct = Math.round((i / files.length) * 100);
+    showUploadLoading(`${i + 1} / ${files.length}개 업로드 중...`, pct);
+
+    // webkitRelativePath: "선택한폴더/서브폴더/파일.md"
+    // 선택한 폴더 자체를 포함해서 경로 유지 (최상위 1단계 제거 안 함)
     const relativePath = file.webkitRelativePath || file.name;
-    // 최상위 폴더(vault 폴더명) 제거
     const parts = relativePath.split('/');
-    const stripped = parts.length > 1 ? parts.slice(1).join('/') : parts[0];
-    const strippedParts = stripped.split('/');
-    const folder = strippedParts.length > 1 ? strippedParts.slice(0, -1).join('/') : '';
-    const stem = stripped.replace(/\.md$/, '');
+    // 브라우저가 폴더 선택 시 최상위에 폴더명 붙임 → 그대로 유지
+    const folder = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
+    const stem = relativePath.replace(/\.md$/, '');
 
     const content = await file.text();
     STATE.notes[stem] = {
       name: file.name,
-      path: stripped,
+      path: relativePath,
       folder,
       content,
       embedding: STATE.notes[stem]?.embedding || null,
@@ -621,14 +673,15 @@ async function handleFiles(e) {
     }
   }
 
+  hideUploadLoading();
   renderNoteList();
-  toast(`${added}개 노트 추가됨`);
+  toast(`노트 ${added}개가 추가되었습니다`);
   document.getElementById('fileInput').value = '';
 }
 
-// ── 폴더 트리 렌더 ────────────────────────────────────────────
+// ── 폴더 트리 ────────────────────────────────────────────────
 function buildTree(notes) {
-  const tree = {}; // { folderPath: [stems] }
+  const tree = {};
   for (const stem of Object.keys(notes)) {
     const folder = notes[stem].folder || '';
     if (!tree[folder]) tree[folder] = [];
@@ -641,14 +694,11 @@ function renderNoteList() {
   const list = document.getElementById('noteList');
   const stems = Object.keys(STATE.notes);
   document.getElementById('noteCount').textContent = `${stems.length}개`;
+  STATE._stemIndex = stems;
 
   if (!stems.length) { list.innerHTML = ''; return; }
 
-  // stem → index 맵 저장 (onclick에서 인덱스로 접근)
-  STATE._stemIndex = stems;
-
   const tree = buildTree(STATE.notes);
-
   let html = '';
 
   const rootNotes = (tree[''] || []).sort();
@@ -702,6 +752,7 @@ function selectNoteByIndex(idx) {
 function selectNote(stem) {
   STATE.currentStem = stem;
   const note = STATE.notes[stem];
+  if (!note) return;
 
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('mainHeader').style.display = 'flex';
@@ -717,7 +768,7 @@ function selectNote(stem) {
   }
 
   document.getElementById('noteContent').textContent = note.content;
-  document.getElementById('recList').innerHTML = `<div style="color:var(--text-dimmer);padding:20px 0;text-align:center">링크 추천 버튼을 눌러줘</div>`;
+  document.getElementById('recList').innerHTML = `<div style="color:var(--text-dimmer);padding:20px 0;text-align:center">링크 추천 버튼을 눌러 주세요</div>`;
   document.getElementById('copyAllWrap').style.display = 'none';
 
   renderNoteList();
@@ -727,7 +778,7 @@ function selectNote(stem) {
 async function deleteCurrentNote() {
   if (!STATE.currentStem) return;
   const stem = STATE.currentStem;
-  if (!confirm(`"${STATE.notes[stem].name}" 노트를 삭제할까?`)) return;
+  if (!confirm(`"${STATE.notes[stem].name}" 노트를 삭제하시겠습니까?`)) return;
 
   if (STATE.settings.githubToken) await deleteNoteFromGitHub(stem);
   delete STATE.notes[stem];
@@ -741,7 +792,7 @@ async function deleteCurrentNote() {
   document.getElementById('copyAllWrap').style.display = 'none';
 
   renderNoteList();
-  toast('노트 삭제됨');
+  toast('노트가 삭제되었습니다');
 }
 
 // ── Voyage AI 임베딩 ──────────────────────────────────────────
@@ -770,9 +821,8 @@ async function getEmbeddingWithRetry(text, retries = 3) {
       });
 
       if (res.status === 429) {
-        // 레이트 리밋 → 대기 후 재시도
         const wait = (attempt + 1) * 3000;
-        updateProgress(-1, -1, `API 요청 제한 — ${wait/1000}초 대기 중...`);
+        updateProgress(-1, -1, `API 요청 한도 초과 — ${wait/1000}초 후 재시도합니다...`);
         await new Promise(r => setTimeout(r, wait));
         continue;
       }
@@ -796,7 +846,7 @@ function cosineSim(a, b) {
 // ── 링크 추천 ─────────────────────────────────────────────────
 async function analyzeNote() {
   if (!STATE.currentStem || STATE.analyzing) return;
-  if (!STATE.settings.voyageKey) { toast('Voyage API 키를 설정해줘'); openSettings(); return; }
+  if (!STATE.settings.voyageKey) { toast('Voyage API 키를 설정해 주세요'); openSettings(); return; }
 
   STATE.analyzing = true;
   const btn = document.getElementById('analyzeBtn');
@@ -811,17 +861,16 @@ async function analyzeNote() {
   try {
     for (let i = 0; i < toEmbed.length; i++) {
       const stem = toEmbed[i];
-      updateProgress(i, toEmbed.length + 1, `임베딩: ${STATE.notes[stem].name}`);
+      updateProgress(i, toEmbed.length + 1, `임베딩 중: ${STATE.notes[stem].name}`);
       STATE.notes[stem].embedding = await getEmbeddingWithRetry(STATE.notes[stem].content);
-      // 요청 간 딜레이 (429 방지)
       await new Promise(r => setTimeout(r, 600));
     }
 
-    updateProgress(toEmbed.length, toEmbed.length + 1, '현재 노트 분석 중');
+    updateProgress(toEmbed.length, toEmbed.length + 1, '현재 노트를 분석하고 있습니다');
     STATE.notes[STATE.currentStem].embedding = await getEmbeddingWithRetry(STATE.notes[STATE.currentStem].content);
 
     if (STATE.settings.githubToken) {
-      updateProgress(toEmbed.length + 1, toEmbed.length + 1, 'GitHub에 저장 중');
+      updateProgress(toEmbed.length + 1, toEmbed.length + 1, 'GitHub에 저장 중...');
       await saveEmbeddingsToGitHub();
     }
 
@@ -836,7 +885,7 @@ async function analyzeNote() {
     renderRecs(sims);
     renderNoteList();
   } catch(e) {
-    toast('오류: ' + e.message);
+    toast('오류가 발생했습니다: ' + e.message);
     console.error(e);
   } finally {
     STATE.analyzing = false;
@@ -862,7 +911,7 @@ function updateProgress(cur, total, label) {
 function renderRecs(sims) {
   const list = document.getElementById('recList');
   if (!sims.length) {
-    list.innerHTML = `<div style="color:var(--text-dimmer);padding:20px 0;text-align:center;line-height:2">관련 노트를 찾지 못했어<br><span style="font-size:11px">노트가 더 많아지면 나아질 거야</span></div>`;
+    list.innerHTML = `<div style="color:var(--text-dimmer);padding:20px 0;text-align:center;line-height:2">관련 노트를 찾지 못했습니다<br><span style="font-size:11px">노트가 더 많아지면 개선됩니다</span></div>`;
     document.getElementById('copyAllWrap').style.display = 'none';
     return;
   }
@@ -870,7 +919,7 @@ function renderRecs(sims) {
   list.innerHTML = sims.map(({ stem, score }) => {
     const note = STATE.notes[stem];
     const displayName = note.name.replace(/\.md$/, '');
-    const escapedStem = stem.replace(/'/g, "\\'");
+    const escapedStem = stem.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     return `
       <div class="rec-item">
         <div class="rec-name">[[${displayName}]]</div>
@@ -897,7 +946,7 @@ function copyAll() {
   const items = document.querySelectorAll('.rec-name');
   const text = [...items].map(el => el.textContent).join('\n');
   navigator.clipboard.writeText(text);
-  toast('전체 복사됨');
+  toast('전체가 복사되었습니다');
 }
 
 // ── 토스트 ────────────────────────────────────────────────────
