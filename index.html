@@ -738,8 +738,13 @@ function renderNoteItem(stem, idx) {
 }
 
 function toggleFolder(folder) {
-  STATE._folderOpen[folder] = STATE._folderOpen[folder] === false ? true : false;
-  renderNoteList();
+  const isNowOpen = STATE._folderOpen[folder] === false ? true : false;
+  STATE._folderOpen[folder] = isNowOpen;
+  const folderId = 'folder-' + folder.replace(/[^a-zA-Z0-9]/g, '-');
+  const children = document.getElementById(folderId);
+  const label = children && children.previousElementSibling;
+  if (children) children.classList.toggle('hidden', !isNowOpen);
+  if (label) label.classList.toggle('open', isNowOpen);
 }
 
 // ── 노트 선택 ─────────────────────────────────────────────────
@@ -854,6 +859,7 @@ async function analyzeNote() {
   btn.innerHTML = '<span class="spinner"></span>분석 중';
 
   const stems = Object.keys(STATE.notes);
+  if (!stems.length) { toast('업로드된 노트가 없습니다'); STATE.analyzing = false; btn.disabled = false; btn.innerHTML = '🔗 링크 추천'; return; }
   const toEmbed = stems.filter(s => !STATE.notes[s].embedding);
 
   showProgress(0, toEmbed.length + 1);
@@ -863,7 +869,7 @@ async function analyzeNote() {
       const stem = toEmbed[i];
       updateProgress(i, toEmbed.length + 1, `임베딩 중: ${STATE.notes[stem].name}`);
       STATE.notes[stem].embedding = await getEmbeddingWithRetry(STATE.notes[stem].content);
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 3000));
     }
 
     updateProgress(toEmbed.length, toEmbed.length + 1, '현재 노트를 분석하고 있습니다');
